@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: http://gardenviewresort.com/sitemap.xml
