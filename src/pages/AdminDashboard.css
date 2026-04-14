@@ -346,7 +346,31 @@
 
     .admin-logo h2,
     .admin-logo span,
-    .admin-nav a span {
+    .admin-nav button span {
         display: none;
     }
 }
+
+/* Information Layouts & Tables */
+.table-responsive { overflow-x: auto; margin-top: 20px; border-radius: 8px; }
+.guest-info, .stay-info, .event-info { display: flex; flex-direction: column; gap: 2px; }
+.guest-info strong, .stay-info strong, .event-info strong { color: #1e293b; font-size: 0.95rem; }
+.guest-info span, .stay-info span, .stay-info small { font-size: 0.8rem; color: #64748b; }
+.type-tag, .category-tag { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #475569; }
+
+/* Enhanced Action Buttons */
+.confirm-btn { background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+.confirm-btn:hover { background: #059669; }
+.cancel-link, .edit-link, .delete-link { background: none; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 4px; }
+.cancel-link, .delete-link { color: #ef4444; }
+.edit-link { color: #3b82f6; }
+.cancel-link:hover, .delete-link:hover, .edit-link:hover { text-decoration: underline; }
+
+/* Dashboard Form Layouts */
+.admin-form h3 { margin-top: 0; margin-bottom: 20px; font-size: 1.1rem; color: #1e293b; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 0.8rem; font-weight: 600; color: #64748b; }
+.form-group.full-width { grid-column: 1 / -1; }
+.form-group textarea { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; min-height: 80px; resize: vertical; }
+.form-actions { grid-column: 1 / -1; display: flex; gap: 12px; margin-top: 10px; }
+.cancel-btn { background: #e2e8f0; color: #475569; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }

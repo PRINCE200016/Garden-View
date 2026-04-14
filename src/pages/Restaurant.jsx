@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Info, UtensilsCrossed, Users2, PartyPopper, Loader, ChevronRight } from 'lucide-react';
 import { IMAGES } from '../constants/images';
+import { API } from '../config/api';
 import './Common.css';
 import './Restaurant.css';
 
@@ -13,7 +14,7 @@ const Restaurant = () => {
     useEffect(() => {
         const fetchMenu = async () => {
             try {
-                const response = await fetch('http://localhost:8081/api/menu');
+                const response = await fetch(`${API}/menu`);
                 const data = await response.json();
                 setMenuItems(data);
                 if (data.length > 0) {

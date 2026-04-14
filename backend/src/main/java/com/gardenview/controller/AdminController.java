@@ -39,6 +39,11 @@ public class AdminController {
         return ResponseEntity.ok(eventService.getAllEvents());
     }
 
+    @PutMapping("/events/{id}/{status}")
+    public ResponseEntity<Event> updateEventStatus(@PathVariable Long id, @PathVariable String status) {
+        return ResponseEntity.ok(eventService.updateEventStatus(id, Event.Status.valueOf(status.toUpperCase())));
+    }
+
     @GetMapping("/revenue/monthly")
     public ResponseEntity<Map<String, Double>> getMonthlyRevenue() {
         List<BookingResponseDTO> bookings = bookingService.getAllBookings().stream()

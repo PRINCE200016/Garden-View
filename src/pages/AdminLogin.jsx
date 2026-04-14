@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, Loader2 } from 'lucide-react';
+import { API } from '../config/api';
 import './AdminLogin.css';
 
 const AdminLogin = () => {
@@ -16,7 +17,7 @@ const AdminLogin = () => {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:8081/api/auth/login', {
+            const response = await fetch(`${API}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
@@ -39,7 +40,7 @@ const AdminLogin = () => {
 
     const handleSetupAdmin = async () => {
         try {
-            const res = await fetch('http://localhost:8081/api/auth/setup-admin', { method: 'POST' });
+            const res = await fetch(`${API}/auth/setup-admin`, { method: 'POST' });
             const msg = await res.text();
             alert(msg);
         } catch (err) { alert('Setup failed'); }

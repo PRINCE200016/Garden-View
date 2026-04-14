@@ -22,4 +22,11 @@ public class EventService {
     public List<Event> getAllEvents() {
         return eventRepository.findAll();
     }
+
+    public Event updateEventStatus(Long id, Event.Status status) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Event inquiry not found"));
+        event.setStatus(status);
+        return eventRepository.save(event);
+    }
 }

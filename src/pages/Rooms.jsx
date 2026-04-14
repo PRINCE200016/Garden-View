@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Wifi, Wind, Coffee, Tv, Eye, BedDouble, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { IMAGES } from '../constants/images';
+import { API } from '../config/api';
 import './Common.css';
 
 const Rooms = () => {
@@ -12,7 +13,7 @@ const Rooms = () => {
     useEffect(() => {
         const fetchRooms = async () => {
             try {
-                const response = await fetch('http://localhost:8081/api/rooms');
+                const response = await fetch(`${API}/rooms`);
                 const data = await response.json();
                 setRooms(data);
             } catch (error) {

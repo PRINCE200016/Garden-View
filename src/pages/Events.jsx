@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, Gift, Briefcase, Users, Loader, CheckCircle } from 'lucide-react';
 import { IMAGES } from '../constants/images';
+import { API } from '../config/api';
 import './Common.css';
 
 const Events = () => {
@@ -19,7 +20,7 @@ const Events = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await fetch('http://localhost:8081/api/events', {
+            await fetch(`${API}/events`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),

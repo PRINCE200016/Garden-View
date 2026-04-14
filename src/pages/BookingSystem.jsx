@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Calendar, Users, Bed, CheckCircle, CreditCard, ChevronRight, Layout, User, Loader } from 'lucide-react';
+import { API } from '../config/api';
 import './Common.css';
 
 const BookingSystem = () => {
@@ -33,7 +34,7 @@ const BookingSystem = () => {
 
     const fetchRooms = async () => {
         try {
-            const response = await fetch('http://localhost:8081/api/rooms');
+            const response = await fetch(`${API}/rooms`);
             const data = await response.json();
             setRooms(data);
             
@@ -71,7 +72,7 @@ const BookingSystem = () => {
         setLoading(true);
         setError('');
         try {
-            const response = await fetch('http://localhost:8081/api/auth/register', {
+            const response = await fetch(`${API}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -93,7 +94,7 @@ const BookingSystem = () => {
     const createBooking = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:8081/api/bookings', {
+            const response = await fetch(`${API}/bookings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -117,7 +118,7 @@ const BookingSystem = () => {
     const handlePayment = async (status) => {
         setLoading(true);
         try {
-            await fetch('http://localhost:8081/api/payments/process', {
+            await fetch(`${API}/payments/process`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

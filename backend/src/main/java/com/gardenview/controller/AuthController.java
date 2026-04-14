@@ -6,6 +6,7 @@ import com.gardenview.model.User;
 import com.gardenview.repository.UserRepository;
 import com.gardenview.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,6 +22,12 @@ public class AuthController {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${admin.email:gardenviewresort2026@gmail.com}")
+    private String adminEmail;
+
+    @Value("${admin.password:gardenviewadmin26}")
+    private String adminPassword;
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
@@ -54,12 +61,12 @@ public class AuthController {
     // Primary admin setup endpoint
     @PostMapping("/setup-admin")
     public ResponseEntity<String> setupAdmin() {
-        if (userRepository.findByEmail("gardenviewresort2026@gmail.com").isEmpty()) {
+        if (userRepository.findByEmail(adminEmail).isEmpty()) {
             User admin = User.builder()
                     .name("Garden View Admin")
-                    .email("gardenviewresort2026@gmail.com")
+                    .email(adminEmail)
                     .phone("07460005296")
-                    .password(passwordEncoder.encode("gardenviewadmin26"))
+                    .password(passwordEncoder.encode(adminPassword))
                     .role(com.gardenview.model.User.Role.ADMIN)
                     .build();
             userRepository.save(admin);

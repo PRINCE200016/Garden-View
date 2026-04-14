@@ -4,6 +4,7 @@ import {
     LayoutDashboard, CalendarCheck, MessageSquare, TrendingUp,
     CheckCircle, XCircle, Utensils, Bed, Save, Plus, Trash2, Loader2
 } from 'lucide-react';
+import { API, ADMIN_API } from '../config/api';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -70,8 +71,6 @@ const AdminDashboard = () => {
 };
 
 // --- API Helper ---
-const API_BASE = 'http://localhost:8081/api';
-const ADMIN_API_BASE = 'http://localhost:8081/admin';
 const getAuthHeader = () => ({ 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`, 'Content-Type': 'application/json' });
 
 // --- Tab Components ---
@@ -84,10 +83,10 @@ const OverviewTab = () => {
         const fetchStats = async () => {
             try {
                 // In a real app, these would be separate calls or one aggregate
-                const revRes = await fetch(`${ADMIN_API_BASE}/revenue/monthly`, { headers: getAuthHeader() });
+                const revRes = await fetch(`${ADMIN_API}/revenue/monthly`, { headers: getAuthHeader() });
                 const revData = await revRes.json();
 
-                const bookRes = await fetch(`${ADMIN_API_BASE}/bookings`, { headers: getAuthHeader() });
+                const bookRes = await fetch(`${ADMIN_API}/bookings`, { headers: getAuthHeader() });
                 const bookData = await bookRes.json();
 
                 const eveRes = await fetch(`${ADMIN_API_BASE}/events`, { headers: getAuthHeader() });
@@ -130,7 +129,7 @@ const BookingsTab = () => {
 
     const fetchBookings = async () => {
         try {
-            const res = await fetch(`${ADMIN_API_BASE}/bookings`, { headers: getAuthHeader() });
+            const res = await fetch(`${ADMIN_API}/bookings`, { headers: getAuthHeader() });
             const data = await res.json();
             setBookings(data);
         } catch (err) { console.error(err); }
@@ -141,8 +140,9 @@ const BookingsTab = () => {
 
     const updateStatus = async (id, status) => {
         try {
-            await fetch(`${ADMIN_API_BASE}/bookings/${id}/${status}`, { method: 'PUT', headers: getAuthHeader() });
-            fetchBookings();
+            const res = await fetch(`${ADMIN_API}/bookings/${id}/${status}`, { method: 'PUT', headers: getAuthHeader() });
+            if (res.ok) fetchBookings();
+            else alert('Failed to update status');
         } catch (err) { console.error(err); }
     };
 
@@ -150,29 +150,53 @@ const BookingsTab = () => {
 
     return (
         <div className="data-section">
-            <table className="admin-table">
-                <thead>
-                    <tr><th>ID</th><th>Guest</th><th>Room</th><th>Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                    {bookings.map(b => (
-                        <tr key={b.id}>
-                            <td>#{b.id}</td><td>{b.userName}</td><td>{b.roomType}</td><td>{b.checkIn}</td><td>₹{b.totalAmount.toLocaleString()}</td>
-                            <td><span className={`status-pill ${b.status.toLowerCase()}`}>{b.status}</span></td>
-                            <td>
-                                <div className="action-btns">
-                                    {b.status === 'PENDING' && (
-                                        <>
-                                            <button className="btn-icon confirm" onClick={() => updateStatus(b.id, 'confirm')}><CheckCircle size={18} /></button>
-                                            <button className="btn-icon cancel" onClick={() => updateStatus(b.id, 'cancel')}><XCircle size={18} /></button>
-                                        </>
-                                    )}
-                                </div>
-                            </td>
+            <div className="table-responsive">
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Guest Info</th>
+                            <th>Stay Details</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {bookings.map(b => (
+                            <tr key={b.id}>
+                                <td>#{b.id}</td>
+                                <td>
+                                    <div className="guest-info">
+                                        <strong>{b.userName}</strong>
+                                        <span>{b.userEmail}</span>
+                                        <span>{b.userPhone}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div className="stay-info">
+                                        <strong>{b.roomType}</strong>
+                                        <span>{b.checkIn} to {b.checkOut}</span>
+                                        <small>{b.nights} nights</small>
+                                    </div>
+                                </td>
+                                <td>₹{b.totalAmount.toLocaleString()}</td>
+                                <td><span className={`status-pill ${b.status.toLowerCase()}`}>{b.status}</span></td>
+                                <td>
+                                    <div className="action-btns">
+                                        {b.status === 'PENDING' && (
+                                            <>
+                                                <button className="confirm-btn" onClick={() => updateStatus(b.id, 'confirm')}>Confirm</button>
+                                                <button className="cancel-link" onClick={() => updateStatus(b.id, 'cancel')}>Cancel</button>
+                                            </>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };
@@ -231,8 +255,11 @@ const RoomsTab = () => {
 const MenuTab = () => {
     const [menu, setMenu] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [showAdd, setShowAdd] = useState(false);
-    const [newItem, setNewItem] = useState({ name: '', category: 'Main Course', price: '', description: '', available: true });
+    const [editingItem, setEditingItem] = useState(null);
+    const [showForm, setShowForm] = useState(false);
+    const [formData, setFormData] = useState({ name: '', category: 'Starters', price: '', description: '', available: true });
+
+    const categories = ['Starters', 'Main Course', 'Desserts', 'Drinks', 'Tandoor', 'Mutton', 'Eggs', 'Sizzler', 'Chicken', 'Veggies', 'Rice/Roti', 'Salads'];
 
     const fetchMenu = async () => {
         try {
@@ -245,25 +272,39 @@ const MenuTab = () => {
 
     useEffect(() => { fetchMenu(); }, []);
 
-    const handleAdd = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        const url = editingItem ? `${API_BASE}/menu/admin/${editingItem.id}` : `${API_BASE}/menu/admin`;
+        const method = editingItem ? 'PUT' : 'POST';
+
         try {
-            await fetch(`${API_BASE}/menu/admin`, {
-                method: 'POST',
+            const res = await fetch(url, {
+                method,
                 headers: getAuthHeader(),
-                body: JSON.stringify(newItem)
+                body: JSON.stringify(formData)
             });
-            setShowAdd(false);
-            setNewItem({ name: '', category: 'Main Course', price: '', description: '', available: true });
-            fetchMenu();
+            if (res.ok) {
+                setShowForm(false);
+                setEditingItem(null);
+                setFormData({ name: '', category: 'Starters', price: '', description: '', available: true });
+                fetchMenu();
+            } else {
+                alert('Action failed');
+            }
         } catch (err) { console.error(err); }
+    };
+
+    const handleEdit = (item) => {
+        setEditingItem(item);
+        setFormData({ ...item });
+        setShowForm(true);
     };
 
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to delete this item?')) return;
         try {
-            await fetch(`${API_BASE}/menu/admin/${id}`, { method: 'DELETE', headers: getAuthHeader() });
-            fetchMenu();
+            const res = await fetch(`${API_BASE}/menu/admin/${id}`, { method: 'DELETE', headers: getAuthHeader() });
+            if (res.ok) fetchMenu();
         } catch (err) { console.error(err); }
     };
 
@@ -273,42 +314,81 @@ const MenuTab = () => {
         <div className="data-section">
             <div className="section-header">
                 <h2>Restaurant Menu</h2>
-                <button className="add-btn" onClick={() => setShowAdd(!showAdd)}>
-                    <Plus size={18} /> {showAdd ? 'Cancel' : 'Add Item'}
+                <button className="add-btn" onClick={() => { setShowForm(!showForm); if(!showForm) setEditingItem(null); }}>
+                    <Plus size={18} /> {showForm ? 'Close Form' : 'Add New Item'}
                 </button>
             </div>
 
-            {showAdd && (
-                <form className="admin-form" onSubmit={handleAdd}>
+            {showForm && (
+                <form className="admin-form" onSubmit={handleSubmit}>
+                    <h3>{editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}</h3>
                     <div className="form-grid">
-                        <input type="text" placeholder="Item Name" value={newItem.name} onChange={e => setNewItem({ ...newItem, name: e.target.value })} required />
-                        <select value={newItem.category} onChange={e => setNewItem({ ...newItem, category: e.target.value })}>
-                            <option>Starters</option><option>Main Course</option><option>Desserts</option><option>Drinks</option>
-                        </select>
-                        <input type="number" placeholder="Price" value={newItem.price} onChange={e => setNewItem({ ...newItem, price: e.target.value })} required />
-                        <button type="submit" className="save-btn">Save Item</button>
+                        <div className="form-group">
+                            <label>Item Name</label>
+                            <input type="text" placeholder="e.g. Butter Chicken" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                        </div>
+                        <div className="form-group">
+                            <label>Category</label>
+                            <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+                                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Price (₹)</label>
+                            <input type="number" placeholder="250" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} required />
+                        </div>
+                        <div className="form-group">
+                            <label>Availability</label>
+                            <select value={formData.available} onChange={e => setFormData({ ...formData, available: e.target.value === 'true' })}>
+                                <option value="true">In Stock</option>
+                                <option value="false">Out of Stock</option>
+                            </select>
+                        </div>
+                        <div className="form-group full-width">
+                            <label>Description</label>
+                            <textarea placeholder="Brief description of the item..." value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })}></textarea>
+                        </div>
+                        <div className="form-actions">
+                            <button type="submit" className="save-btn">{editingItem ? 'Update Item' : 'Create Item'}</button>
+                            {editingItem && <button type="button" className="cancel-btn" onClick={() => { setShowForm(false); setEditingItem(null); }}>Cancel</button>}
+                        </div>
                     </div>
                 </form>
             )}
 
-            <table className="admin-table">
-                <thead>
-                    <tr><th>Name</th><th>Category</th><th>Price (₹)</th><th>Available</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                    {menu.map(m => (
-                        <tr key={m.id}>
-                            <td>{m.name}</td><td>{m.category}</td><td>{m.price}</td>
-                            <td><input type="checkbox" checked={m.available} readOnly /></td>
-                            <td>
-                                <div className="action-btns">
-                                    <button className="btn-icon cancel" onClick={() => handleDelete(m.id)}><Trash2 size={18} /></button>
-                                </div>
-                            </td>
+            <div className="table-responsive">
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Actions</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {menu.map(m => (
+                            <tr key={m.id}>
+                                <td>{m.name}</td>
+                                <td><span className="category-tag">{m.category}</span></td>
+                                <td>₹{m.price}</td>
+                                <td>
+                                    <span className={`status-pill ${m.available ? 'confirmed' : 'cancelled'}`}>
+                                        {m.available ? 'Available' : 'Unavailable'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div className="action-btns">
+                                        <button className="edit-link" onClick={() => handleEdit(m)}>Edit</button>
+                                        <button className="delete-link" onClick={() => handleDelete(m.id)}>Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };
@@ -317,35 +397,68 @@ const EventsTab = () => {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchEvents = async () => {
-            try {
-                const res = await fetch(`${ADMIN_API_BASE}/events`, { headers: getAuthHeader() });
-                const data = await res.json();
-                setEvents(data);
-            } catch (err) { console.error(err); }
-            setLoading(false);
-        };
-        fetchEvents();
-    }, []);
+    const fetchEvents = async () => {
+        try {
+            const res = await fetch(`${ADMIN_API}/events`, { headers: getAuthHeader() });
+            const data = await res.json();
+            setEvents(data);
+        } catch (err) { console.error(err); }
+        setLoading(false);
+    };
+
+    useEffect(() => { fetchEvents(); }, []);
+
+    const updateStatus = async (id, status) => {
+        try {
+            const res = await fetch(`${ADMIN_API}/events/${id}/${status}`, { method: 'PUT', headers: getAuthHeader() });
+            if (res.ok) fetchEvents();
+        } catch (err) { console.error(err); }
+    };
 
     if (loading) return <div className="loader"><Loader2 className="animate-spin" /></div>;
 
     return (
         <div className="data-section">
-            <table className="admin-table">
-                <thead>
-                    <tr><th>Name</th><th>Type</th><th>Date</th><th>Guests</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                    {events.map(e => (
-                        <tr key={e.id}>
-                            <td>{e.name}</td><td>{e.eventType}</td><td>{new Date(e.eventDate).toLocaleDateString()}</td><td>{e.guestsCount}</td>
-                            <td><span className={`status-pill ${e.status.toLowerCase()}`}>{e.status}</span></td>
+            <div className="table-responsive">
+                <table className="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Name/Type</th>
+                            <th>Contact</th>
+                            <th>Date</th>
+                            <th>Guests</th>
+                            <th>Status</th>
+                            <th>Actions</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {events.map(e => (
+                            <tr key={e.id}>
+                                <td>
+                                    <div className="event-info">
+                                        <strong>{e.name}</strong>
+                                        <span className="type-tag">{e.eventType}</span>
+                                    </div>
+                                </td>
+                                <td>{e.phone}</td>
+                                <td>{new Date(e.eventDate).toLocaleDateString()}</td>
+                                <td>{e.guestsCount}</td>
+                                <td><span className={`status-pill ${e.status.toLowerCase()}`}>{e.status}</span></td>
+                                <td>
+                                    <div className="action-btns">
+                                        {e.status === 'PENDING' && (
+                                            <button className="confirm-btn" onClick={() => updateStatus(e.id, 'reviewed')}>Mark Reviewed</button>
+                                        )}
+                                        {e.status === 'REVIEWED' && (
+                                            <button className="confirm-btn" onClick={() => updateStatus(e.id, 'confirmed')}>Confirm</button>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

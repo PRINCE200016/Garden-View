@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Phone, Mail, MapPin, Send, MessageCircle, Loader, CheckCircle } from 'lucide-react';
+import { API } from '../config/api';
 import './Common.css';
 
 const Contact = () => {
@@ -17,7 +18,7 @@ const Contact = () => {
         setLoading(true);
         try {
             // Using Event controller as a generic inquiry handler
-            await fetch('http://localhost:8081/api/events', {
+            await fetch(`${API}/events`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

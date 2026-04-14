@@ -94,6 +94,8 @@ public class BookingService {
         return BookingResponseDTO.builder()
                 .id(booking.getId())
                 .userName(booking.getUser().getName())
+                .userEmail(booking.getUser().getEmail())
+                .userPhone(booking.getUser().getPhone())
                 .roomType(booking.getRoom().getRoomType())
                 .checkIn(booking.getCheckIn())
                 .checkOut(booking.getCheckOut())
